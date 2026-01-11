@@ -2,6 +2,16 @@
 
 基于原EvanMi网页样式设计的个人导航网站，采用Cloudflare Worker + KV存储架构，支持前后端一体化部署。
 
+## ⚡ 一键部署
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/idinging/navigation-bar)
+
+点击上方按钮即可一键部署到 Cloudflare Workers，无需任何配置！
+
+## 体验地址
+ **地址**：https://nav.sfkj.de5.net
+ **管理密码**：admin
+
 ## 🚀 功能特性
 
 - **现代化设计**: 基于原EvanMi网页的精美样式
@@ -46,8 +56,43 @@ navigation/
 - **前端**: 纯HTML5 + CSS3 + JavaScript ES6+
 - **后端**: Cloudflare Worker (JavaScript ES6 模块)
 - **架构**: 分层模块化架构 (数据层/处理器层/路由层/工具层)
-- **存储**: Cloudflare KV (可选)
+- **存储**: Cloudflare KV 
 - **部署**: Cloudflare Workers Platform
+
+## 📖 一键部署教程
+
+### 方式一：一键部署（推荐）
+
+使用 Cloudflare Workers 一键部署功能，3步完成部署：
+
+#### 步骤 1：点击部署按钮
+
+点击上方的 "Deploy to Cloudflare Workers" 按钮，或访问：
+```
+https://deploy.workers.cloudflare.com/?url=https://github.com/idinging/navigation-bar
+```
+
+![部署步骤1](pic/yijianbushu/bushu1.png)
+
+#### 步骤 2：授权 GitHub 仓库
+
+- 登录你的 Cloudflare 账号
+- 授权访问 GitHub 仓库
+- 选择要部署的仓库
+
+![部署步骤2](pic/yijianbushu/bushu2.png)
+
+#### 步骤 3：完成部署
+
+- 等待自动部署完成
+- 获取你的 Worker 访问地址
+- 开始使用你的个人导航网站！
+
+![部署步骤3](pic/yijianbushu/bushu3.png)
+
+部署完成后，你将获得一个类似 `https://your-project.your-subdomain.workers.dev` 的访问地址。
+
+### 方式二：手动部署
 
 ## 🔧 快速部署
 
@@ -75,9 +120,8 @@ wrangler deploy
 wrangler dev
 ```
 
-### 4. 配置KV存储（可选）
+### 4. 配置KV存储
 
-如果需要使用KV存储功能：
 
 ```bash
 # 创建KV命名空间
@@ -85,28 +129,6 @@ wrangler kv:namespace create "NAVIGATION_KV"
 wrangler kv:namespace create "NAVIGATION_KV" --preview
 
 # 将返回的ID更新到wrangler.toml中
-```
-
-## 📝 API接口
-
-### 获取导航数据
-```
-GET /api/navigation
-```
-
-### 搜索网站
-```
-GET /api/search?q=关键词
-```
-
-### 获取统计信息
-```
-GET /api/stats
-```
-
-### 获取所有网站
-```
-GET /api/sites
 ```
 
 ## 🎨 自定义配置
@@ -122,30 +144,6 @@ export const profileConfig = {
   subtitle: "你的个人导航网站",
   // ...
 };
-
-// 添加新的网站分类
-const customSites = [
-  {
-    title: "GitHub",
-    description: "代码托管平台", 
-    url: "https://github.com",
-    icon: "🐙",
-    tags: ["代码", "开源"]
-  }
-  // 添加更多网站...
-];
-
-// 在navigationCategories中添加新分类
-export const navigationCategories = [
-  {
-    id: "custom-category",
-    title: "自定义分类",
-    icon: "🎯", 
-    sites: customSites
-  }
-  // 其他分类...
-];
-```
 
 ### 自定义样式
 
@@ -178,20 +176,6 @@ ENVIRONMENT = "production"
 wrangler route add example.com/*
 ```
 
-## 📊 监控和日志
-
-启用Cloudflare的日志服务：
-
-```toml
-[observability]
-enabled = true
-```
-
-查看实时日志：
-
-```bash
-wrangler tail
-```
 
 ## 🛡️ 安全特性
 
