@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Evan's Domain Name</title>
+    <link rel="icon" href="/asset/favicon.svg" type="image/svg+xml">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;background:#fff;color:#09090b;min-height:100vh;padding:20px;position:relative;}
+        #bg-canvas{position:fixed;inset:0;z-index:-1;pointer-events:none;}
+        .container{max-width:1200px;margin:0 auto;}
+        .header{text-align:center;margin-bottom:20px;padding-top:20px;}
+        .header h1{font-size:2rem;font-weight:600;margin-bottom:10px;}
+        .theme-toggle{position:fixed;top:20px;right:20px;background:#fff;border:1px solid #e4e4e7;border-radius:50%;width:50px;height:50px;font-size:1.5rem;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:all .2s;z-index:1000;}
+        .theme-toggle:hover{box-shadow:0 4px 12px rgba(0,0,0,.15);}
+        .search-container{max-width:588px;margin:0 auto 25px;}
+        #domain-search{width:100%;padding:12px 20px;border:1px solid #e4e4e7;border-radius:40px;background:#fff;color:#09090b;font-size:.85rem;transition:all .3s;}
+        .dark-theme #domain-search{border-color:#27272a;background:#18181b;color:#fafafa;}
+        #domain-search:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2);}
+        .section{margin-bottom:10px;}
+        .section-title{font-size:1.3rem;font-weight:600;border-left:3px solid #d5d5d5;padding-left:15px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+        .section-title .suffix-filter{font-size:.85rem;padding:5px 8px;border-radius:4px;border:1px solid #e4e4e7;background:#fff;color:#09090b;}
+        .dark-theme .section-title .suffix-filter{background:#18181b;border-color:#27272a;color:#fafafa;}
+        .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
+        .card{background:#fff;border:1px solid #e4e4e7;border-radius:4px;padding:20px;transition:all .2s;text-decoration:none;color:inherit;display:block;position:relative;}
+        .card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1);border-color:#3b82f6;}
+        .card-title{font-size:1.1rem;font-weight:600;}
+        .card-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+        .provider-name{font-size:.9rem;color:#71717a;font-weight:400;}
+        .card-description{font-size:.9rem;color:#71717a;line-height:1.4;display:flex;justify-content:space-between;}
+        .card-description span{flex:1;}
+        .card-description .price{flex:1;text-align:right;color:#71717a;}
+        .footer{text-align:center;margin-top:30px;padding:0px;color:#71717a;font-size:.9rem;}
+        .footer a{color:#71717a;text-decoration:none;}
+        .dark-theme{background:#09090b;color:#fafafa;}
+        .dark-theme .header h1,.dark-theme .section-title,.dark-theme .card-title{color:#fafafa;}
+        .dark-theme .card{background:#18181b;border-color:#27272a;}
+        .dark-theme .card-description,.dark-theme .footer{color:#a1a1aa;}
+        .dark-theme .theme-toggle{background:#18181b;border-color:#27272a;color:#fafafa;}
+        .no-results{grid-column:1/-1;text-align:center;padding:40px;color:#71717a;font-size:1.1rem;}
+        .dark-theme .no-results{color:#a1a1aa;}
+        .tooltip{position:absolute;top:0;left:0;display:none;background:#fff;border:1px solid #e4e4e7;border-radius:4px;padding:6px 10px;font-size:.72rem;color:#71717a;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.08);pointer-events:none;z-index:10;transition:opacity .2s;}
+        .dark-theme .tooltip{background:#18181b;border-color:#27272a;color:#a1a1aa;}
+        #pagination-wrapper{display:flex;align-items:center;justify-content:flex-end;margin-top:20px;flex-wrap:wrap;}
+        #pagination-wrapper button{margin:0 4px;padding:4px 8px;font-size:.85rem;border:1px solid #e4e4e7;border-radius:4px;background:#fff;color:#09090b;cursor:pointer;}
+        #pagination-wrapper button:last-child{margin-right:0;}
+        #pagination-wrapper button:disabled{opacity:.4;cursor:not-allowed;}
+        #pagination-wrapper button:not(:first-child):not(:last-child){width:28px;height:28px;padding:0;text-align:center;}
+        .dark-theme #pagination-wrapper button{background:#18181b;border-color:#27272a;color:#fafafa;}
+        .badge-icon{margin-left:6px;vertical-align:bottom;}
+        @media(max-width:768px){
+            .header h1{font-size:2rem;}
+            .cards-grid{grid-template-columns:1fr;}
+            .theme-toggle{width:45px;height:45px;font-size:1.3rem;}
+            .section-title .suffix-filter{font-size:.75rem;padding:5.5px 6px;}
+        }
+
+        /* PC端三栏布局（≥768px） */
+        @media (min-width: 768px) {
+            .footer {
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                text-align: left;
+                flex-direction: row;
+            }
+            .footer-left   { text-align: left;   }
+            .footer-center { text-align: center; flex: 1; } /* 居中 */
+            .footer-right  { text-align: right;  }
+            /* 图标间距保持不变 */
+            .footer-right a { margin-left: 12px; }
+            .footer-right a:first-child { margin-left: 0; }
+        }
+    </style>
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="64881441-3016-4bae-b37f-acea9a51d87f"></script>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <button class="theme-toggle" onclick="toggleTheme()">🌗</button>
+
+    <div class="container">
+        <header class="header" style="margin-bottom:30px;">
+            <h1>Evan's Domain Name</h1>
+        </header>
+        <div class="search-container">
+            <input type="text" id="domain-search" placeholder="搜索域名......域名/主题均可交易，域名意义仅供参考" aria-label="搜索域名">
+        </div>
+
+        <section class="section">
+            <h2 class="section-title">
+                域名
+                <select id="suffix-filter" class="suffix-filter">
+                    <option value="ALL">ALL</option>
+                    <option value="CX">CX</option><option value="MOM">MOM</option>
+                    <option value="QUEST">QUEST</option><option value="LAT">LAT</option>
+                    <option value="COOL">COOL</option><option value="ORG">ORG</option>
+                    <option value="IM">IM</option><option value="BZ">BZ</option>
+                    <option value="LI">LI</option><option value="ZONE">ZONE</option>
+                    <option value="RENT">RENT</option><option value="COM">COM</option>
+                    <option value="CN">CN</option><option value="XYZ">XYZ</option>
+                    <option value="SI">SI</option><option value="EE">EE</option>
+                    <option value="GE">GE</option><option value="BEST">BEST</option>
+                    <option value="ME">ME</option><option value="PLUS">PLUS</option>
+                    <option value="SPACE">SPACE</option><option value="CLUB">CLUB</option>
+                    <option value="DOG">DOG</option><option value="MD">MD</option>
+                    <option value="BA">BA</option><option value="BI">BI</option>
+                    <option value="KE">KE</option>
+                </select>
+            </h2>
+            <div class="cards-grid" id="domains-container"></div>
+            <div id="pagination-wrapper"></div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">链接</h2>
+            <div class="cards-grid">
+                <a href="https://evan.plus" class="card" target="_blank">
+                    <div class="card-title-row"><div class="card-title">Evan's Nav</div></div>
+                    <div class="card-description" style="color:#9cd2f9;">我用AI写的精美开源私有化导航</div>
+                </a>
+                <a href="https://evanmi.top/card.html" class="card" target="_blank">
+                    <div class="card-title-row"><div class="card-title">Evan said</div></div>
+                    <div class="card-description" style="color:#FFB3B9;">点击联系，童叟无欺！多数续费不贵</div>
+               </a>
+                <a href="https://github.com/EvanTop/MiPanel" class="card" target="_blank">
+                    <div class="card-title-row"><div class="card-title">MiPanel</div></div>
+                    <div class="card-description" style="color:#9cd2f9;">域名资产盈亏管理工具-GitHub</div>
+                </a>
+                <a href="https://www.mtab.cc/pricing?promoCode=evan.xin" class="card" target="_blank">
+                    <div class="card-title-row"><div class="card-title">mTab</div></div>
+                    <div class="card-description" style="color:#9cd2f9;">mTab标签页永久优惠码：evan.xin</div>
+                </a>
+            </div>
+        </section>
+
+<footer class="footer">
+    <div class="footer-left">© 2025 EvanMi.Top</div>
+    <div class="footer-center" style="margin-top:11px;">
+        <a href="https://evanmi.top/card.html" target="_blank">Contact me if you like the domain name</a>
+    </div>
+    <div class="footer-right" style="margin-top:11px;">
+        <a title="Access Data" href="https://us.umami.is/share/Yir5VNBVP9Ic6Xiw/www.evanmi.top" target="_blank" rel="noopener"><img width="20" height="20" src="https://evanmi.top/umami.ico" alt="Umami"></a>
+        <a title="米表联盟[Domain.Cards]" href="https://domain.cards/" target="_blank" rel="noopener"><img width="18" height="18" src="https://domain.cards/api/icon/evanmi.top" alt="米表联盟 BadgeIcon"></a>
+        <a title="XinYuCloud" href="https://www.xinyuy.com/?ic20a34" target="_blank" rel="noopener"><img width="19" height="19" src="https://www.evanmi.top/x.ico" alt="XinYuCloud"></a>
+        <a title="14.cx" href="https://14.cx/evanmi.top" target="_blank" rel="noopener"><img width="19" height="19" src="https://www.evanmi.top/14.ico" alt="14.cx"></a>
+        <a title="My Blog" href="https://evan.xin" target="_blank" rel="noopener"><img width="19" height="19" src="https://www.evanmi.top/favicon.ico" alt="My Blog"></a>
+    </div>
+</footer>
+    </div>
+
+    <script>
+        const badgeMapLight = {
+          1: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23ffbbc1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23fff' font-size='12' font-family='system-ui'%3E精选%3C/text%3E%3C/svg%3E`,
+          2: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23a0ed7a'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23fff' font-size='12' font-family='system-ui'%3E推荐%3C/text%3E%3C/svg%3E`,
+          3: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23fccf74'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23fff' font-size='12' font-family='system-ui'%3E折扣%3C/text%3E%3C/svg%3E`,
+          4: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23d8b4fe'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23fff' font-size='12' font-family='system-ui'%3E代售%3C/text%3E%3C/svg%3E`
+        };
+        const badgeMapDark = {
+          1: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23ffbbc1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23000' font-size='12' font-family='system-ui'%3E精选%3C/text%3E%3C/svg%3E`,
+          2: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23a0ed7a'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23000' font-size='12' font-family='system-ui'%3E推荐%3C/text%3E%3C/svg%3E`,
+          3: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23fccf74'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23000' font-size='12' font-family='system-ui'%3E折扣%3C/text%3E%3C/svg%3E`,
+          4: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 22'%3E%3Crect width='40' height='20' rx='5' fill='%23d8b4fe'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23000' font-size='12' font-family='system-ui'%3E代售%3C/text%3E%3C/svg%3E`
+        };
+
+        const domainMeanings = {
+            "RAR.CX": "RAR=压缩/打包/归档，全球用户秒懂,应用方向众多",
+            "00.MOM": "00代表起点也有代际感，母婴育儿亲子/二次元",
+            "TI.MOM": "Tech Innovation｜钛，科技+mom、智能母婴",
+            "YA.MOM": "YA=Young Adult｜“呀妈”，育儿社群或产品",
+            "TI.QUEST": "“钛探索”，科技、科创、航天，科技社区等",
+            "CSS.DOG": "适用技术教育类、前端、论坛、平台、Blog",
+            "YIN.COOL": "银库/音库/印库/音酷/银酷/印酷，音乐银饰印章",
+            "YIRI.ORG": "“一日三秋”，公益类/日记类/日常分享等",
+            "BBB.LAT": "步步棒：每一步都更棒的生活锦囊，日更一条",
+            "ZZZ.LAT": "自在枕/中转站/支支招/走走走/再找找/种植者",
+            "ZUN.IM": "尊重尊贵品牌感强；IM即时通讯社群或个人Blog",
+            "BEI.IM": "“北”“贝”“备”，备用通讯；北方社区个人Blog",
+            "RUN.BZ": "创业/跑步社群；网感强，用于投资移民（润学）",
+            "SAY.LI": "说出来，轻博客/树洞；分享社区，辩论平台",
+            "CCC.ZONE": "3C/Crypto Coin Club/Creative Coding Community",
+            "BBS.RENT": "租赁论坛，二手、房屋、汽车租赁，租赁平台",
+            "DFT.IM": "Design For Tomorrow设计交流；豆腐汤/炖粉条个人IP",
+            "YMS.IM": "羊毛社/羊毛舍,薅羊毛社区；Your Marketing Solution",
+            "HI.BI": "只是代售，有需要联系我",
+            "IFGOO.COM": "“爱富购”，购物、跨境电商；有科技感适合AI/搜索类",
+            "BLOGER.CLUB": "blogger俱乐部，博主俱乐部；自媒体社区",
+            "VGOO.CN": "微购小电商；视频聚合站；Very Good，简洁好记",
+            "BUZUO.CN": "容易打造年轻人亚文化品牌；懒人社区/反卷文化",
+            "BAA.EE": "baa=羊叫，萌系品牌/表情包；品牌化强，可爱易记",
+            "NING.SI": "宁/柠/凝，私/思，个人品牌；专注思考，教育科技",
+            "DUN.GE": "盾格，安全/格子社群；很适合个人IP/短视频博主",
+            "URLS.BEST": "最佳网址导航，导航站；最佳链接",
+            "JIAOCAI.XYZ": "教材分享/教育资料站；适合中国教育出海品牌",
+            "LVKE.ME": "旅游日记/结伴；Love+Key 谐音个人品牌",
+            "MILV.XYZ": "觅旅，寻找旅行灵感；谜旅，适合旅游、探险类",
+            "EDC.PLUS": "Every Day Carry随身装备，EDC玩具｜主题可卖",
+            "LIAOLIAO.SPACE": "liaoliao=聊聊，匿名聊天室；社交空间",
+            "BOKEBANG.COM": "博客帮，博客联盟、自媒体联盟、写作爱好者社区",
+            "WANG.KE": "只是代售，有需要联系我",
+            "11.MD": "只是代售，有需要联系我",
+            "LAO.BA": "只是代售，有需要联系我",
+            "YUE.BA": "只是代售，有需要联系我",
+            "TAMA.BI": "只是代售，有需要联系我",
+            "SUO.GE": "只是代售，有需要联系我"
+        };
+        const domains = [
+            { title: "RAR.CX", description: "rar.cx", price: "¥3000", link: "", provider: "west", badge: 1 },
+            { title: "00.MOM", description: "00.mom", price: "¥100", link: "", provider: "spaceship" },
+            { title: "TI.MOM", description: "ti.mom", price: "¥100", link: "", provider: "spaceship" },
+            { title: "YA.MOM", description: "ya.mom", price: "¥100", link: "", provider: "spaceship", badge: 2 },
+            { title: "TI.QUEST", description: "ti.quest", price: "¥200", link: "", provider: "spaceship", badge: 2 },
+            { title: "CSS.DOG", description: "css.dog", price: "¥500", link: "", provider: "spaceship", badge: 2 },
+            { title: "YIN.COOL", description: "yin.cool", price: "¥200", link: "", provider: "spaceship", badge: 1 },
+            { title: "YIRI.ORG", description: "yiri.org", price: "¥500", link: "", provider: "spaceship", badge: 2 },
+            { title: "BBB.LAT", description: "bbb.lat", price: "¥66", link: "", provider: "spaceship" },
+            { title: "ZZZ.LAT", description: "zzz.lat", price: "¥66", link: "", provider: "spaceship" },
+            { title: "ZUN.IM", description: "zun.im", price: "¥650➤¥550", link: "", provider: "spaceship", badge: 3  },
+            { title: "BEI.IM", description: "bei.im", price: "¥650➤¥550", link: "", provider: "dynadot", badge: 3  },
+            { title: "RUN.BZ", description: "run.bz", price: "¥650", link: "", provider: "dynadot", badge: 1 },
+            { title: "SAY.LI", description: "say.li", price: "¥1200➤¥950", link: "", provider: "dynadot", badge: 3 },
+            { title: "CCC.ZONE", description: "ccc.zone", price: "¥600", link: "", provider: "spaceship" },
+            { title: "BBS.RENT", description: "bbs.rent", price: "¥800➤¥500", link: "", provider: "spaceship", badge: 3 },
+            { title: "DFT.IM", description: "dft.im", price: "¥150", link: "", provider: "quyu" },
+            { title: "YMS.IM", description: "yms.im", price: "¥150", link: "", provider: "quyu" },
+            { title: "HI.BI", description: "hi.bi", price: "¥5888", link: "", provider: "quyu", badge: 4 },
+            { title: "IFGOO.COM", description: "ifgoo.com", price: "¥650", link: "", provider: "spaceship" },
+            { title: "BLOGER.CLUB", description: "bloger.club", price: "¥450", link: "", provider: "spaceship" },
+            { title: "VGOO.CN", description: "vgoo.cn", price: "¥150", link: "", provider: "west" },
+            { title: "BUZUO.CN", description: "buzuo.cn", price: "¥150", link: "", provider: "west" },
+            { title: "BAA.EE", description: "baa.ee", price: "¥200", link: "https://baa.ee", provider: "quyu", badge: 2 },
+            { title: "NING.SI", description: "ning.si", price: "¥350", link: "", provider: "quyu" },
+            { title: "DUN.GE", description: "dun.ge", price: "¥150", link: "", provider: "quyu" },
+            { title: "URLS.BEST", description: "urls.best", price: "¥150", link: "https://urls.best", provider: "spaceship", badge: 1 },
+            { title: "JIAOCAI.XYZ", description: "jiaocai.xyz", price: "¥100", link: "", provider: "west" },
+            { title: "LVKE.ME", description: "lvke.me", price: "¥100", link: "", provider: "west" },
+            { title: "MILV.XYZ", description: "milv.xyz", price: "¥150", link: "", provider: "spaceship", badge: 1 },
+            { title: "EDC.PLUS", description: "edc.plus", price: "¥150", link: "", provider: "west", badge: 2 },
+            { title: "LIAOLIAO.SPACE", description: "liaoliao.space", price: "¥100", link: "", provider: "spaceship" },
+            { title: "BOKEBANG.COM", description: "bokebang.com", price: "¥500", link: "", provider: "space", badge: 2 },
+            { title: "WANG.KE", description: "wang.ke", price: "¥18888", link: "", provider: "quyu", badge: 4 },
+            { title: "11.MD", description: "11.md", price: "¥1888", link: "", provider: "quyu", badge: 4 },
+            { title: "LAO.BA", description: "lao.ba", price: "¥3888", link: "", provider: "quyu", badge: 4 },
+            { title: "YUE.BA", description: "yue.ba", price: "¥6888", link: "", provider: "quyu", badge: 4 },
+            { title: "TAMA.BI", description: "tama.bi", price: "¥5888", link: "", provider: "quyu", badge: 4 },
+            { title: "SUO.GE", description: "suo.ge", price: "¥588", link: "", provider: "quyu", badge: 4 }
+        ];
+
+        const ITEMS_PER_PAGE = 24;
+        const MAX_PAGE_BUTTONS = 5;
+        let currentPage = 1;
+        let currentFilter = 'ALL';
+        const allDomains = [...domains];
+
+        const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+        const getFilteredDomains = () => currentFilter === 'ALL' ? allDomains : allDomains.filter(d => d.title.toUpperCase().endsWith('.' + currentFilter));
+
+        const renderPagination = () => {
+            const wrapper = document.getElementById('pagination-wrapper');
+            wrapper.innerHTML = '';
+            const filtered = getFilteredDomains();
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+            if (totalPages <= 1 && currentFilter === 'ALL') return;
+
+            const createBtn = (text, disabled = false, action = () => {}) => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.disabled = disabled;
+                if (!disabled) btn.addEventListener('click', () => {
+                    action();
+                    renderDomainCards(getFilteredDomains().slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE));
+                    renderPagination();
+                });
+                return btn;
+            };
+
+            wrapper.appendChild(createBtn('上一页', currentPage === 1, () => currentPage--));
+
+            const start = Math.max(1, currentPage - Math.floor(MAX_PAGE_BUTTONS / 2));
+            const end = Math.min(totalPages, start + MAX_PAGE_BUTTONS - 1);
+            for (let i = start; i <= end; i++) wrapper.appendChild(createBtn(i, i === currentPage, () => currentPage = i));
+
+            wrapper.appendChild(createBtn('下一页', currentPage === totalPages, () => currentPage++));
+        };
+
+        const renderDomainCards = domainsArray => {
+            const container = document.getElementById('domains-container');
+            container.innerHTML = '';
+            if (domainsArray.length === 0) { container.innerHTML = '<p class="no-results">没有找到匹配的域名</p>'; return; }
+            const isDark = document.body.classList.contains('dark-theme');
+            const map = isDark ? badgeMapDark : badgeMapLight;
+            domainsArray.forEach(domain => {
+                const card = document.createElement('a');
+                card.className = 'card';
+                card.href = domain.link || '';
+                if (domain.link) card.target = '_blank';
+                const badgeHtml = domain.badge ? `<img src="${map[domain.badge]}" class="badge-icon" height="20">` : '';
+                card.innerHTML = `
+                    <div class="card-title-row">
+                        <div class="card-title">
+                            ${domain.title}${badgeHtml}
+                        </div>
+                        <div class="provider-name">${domain.provider}</div>
+                    </div>
+                    <div class="card-description">
+                        <span>${domain.description}</span>
+                        <span class="price">${domain.price}</span>
+                    </div>
+                `;
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = domainMeanings[domain.title] || '暂无释义';
+                card.appendChild(tooltip);
+                if (!isMobile()) {
+                    card.addEventListener('mouseenter', () => { tooltip.style.display = 'block'; tooltip.style.left = '5px'; tooltip.style.top = '74px'; });
+                    card.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+                } else {
+                    card.addEventListener('click', e => {
+                        if (domain.link && domain.link.trim() !== '') return;
+                        e.preventDefault();
+                        document.querySelectorAll('.tooltip').forEach(t => t.style.display = 'none');
+                        tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+                        tooltip.style.left = '5px'; tooltip.style.top = '74px';
+                    });
+                }
+                container.appendChild(card);
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+            const suffixFilter = document.getElementById('suffix-filter');
+            suffixFilter.addEventListener('change', () => {
+                currentFilter = suffixFilter.value;
+                currentPage = 1;
+                renderDomainCards(getFilteredDomains().slice(0, ITEMS_PER_PAGE));
+                renderPagination();
+            });
+
+            const searchInput = document.getElementById('domain-search');
+            searchInput.addEventListener('input', () => {
+                const keyword = searchInput.value.trim().toLowerCase();
+                const filtered = allDomains.filter(d => d.title.toLowerCase().includes(keyword) || d.description.toLowerCase().includes(keyword));
+                currentFilter = 'ALL'; suffixFilter.value = 'ALL'; currentPage = 1;
+                renderDomainCards(filtered.slice(0, ITEMS_PER_PAGE));
+                renderPagination();
+            });
+
+            renderDomainCards(getFilteredDomains().slice(0, ITEMS_PER_PAGE));
+            renderPagination();
+
+            const cvs = document.getElementById('bg-canvas'), ctx = cvs.getContext('2d'), dpr = window.devicePixelRatio || 1;
+            let particles = [];
+            const resize = () => {
+                cvs.width = innerWidth * dpr; cvs.height = innerHeight * dpr;
+                ctx.scale(dpr, dpr); cvs.style.width = innerWidth + 'px'; cvs.style.height = innerHeight + 'px';
+            };
+            window.addEventListener('resize', resize);
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * innerWidth; this.y = Math.random() * innerHeight;
+                    this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3;
+                    this.r = Math.random() * 1.2 + 0.5;
+                }
+                update() {
+                    this.x += this.vx; this.y += this.vy;
+                    if (this.x < 0 || this.x > innerWidth) this.vx *= -1;
+                    if (this.y < 0 || this.y > innerHeight) this.vy *= -1;
+                }
+                draw() {
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                    ctx.fillStyle = document.body.classList.contains('dark-theme') ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.25)';
+                    ctx.fill();
+                }
+            }
+            const drawLines = () => {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y, dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = document.body.classList.contains('dark-theme') ? `rgba(255,255,255,${1 - dist / 100})` : `rgba(0,0,0,${0.5 - dist / 200})`;
+                            ctx.lineWidth = 0.5; ctx.stroke();
+                        }
+                    }
+                }
+            };
+            const animate = () => {
+                ctx.clearRect(0, 0, innerWidth, innerHeight);
+                particles.forEach(p => { p.update(); p.draw(); });
+                drawLines(); requestAnimationFrame(animate);
+            };
+            resize();
+            particles = Array.from({ length: Math.floor(innerWidth * innerHeight / 18000) }, () => new Particle());
+            animate();
+        });
+
+        const toggleTheme = () => {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+            renderDomainCards(getFilteredDomains().slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE));
+            renderPagination();
+        };
+
+/* 仅拦截 DevTools 快捷键（F12 / Ctrl+Shift+I / Ctrl+Shift+J / ⌘+⌥+I） */
+(function () {
+  var fired = false;
+  window.addEventListener('keydown', function (e) {
+    // 常见快捷键组合
+    var devKey =
+      e.key === 'F12' ||
+      ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+      ((e.ctrlKey || e.metaKey) && e.altKey && e.key === 'I');
+
+    if (devKey && !fired) {
+      fired = true;        // 只弹一次
+      e.preventDefault();  // 阻止浏览器默认打开 DevTools
+      alert('检测到开发者工具快捷键，浏览受限。');
+    }
+  });
+})();
+    </script>
+</body>
+</html>

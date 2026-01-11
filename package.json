@@ -1,0 +1,40 @@
+{
+  "name": "personal-navigation",
+  "version": "1.0.0",
+  "description": "基于Cloudflare Worker的个人导航网站",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "deploy": "node scripts/deploy.js",
+    "deploy:direct": "npx wrangler@latest deploy",
+    "preview": "npx wrangler dev --remote",
+    "tail": "npx wrangler tail",
+    "kv:create": "npx wrangler kv:namespace create NAVIGATION_KV",
+    "kv:create:preview": "npx wrangler kv:namespace create NAVIGATION_KV --preview",
+    "update:wrangler": "npm install --save-dev wrangler@latest"
+  },
+  "keywords": [
+    "navigation",
+    "cloudflare",
+    "worker",
+    "personal-website",
+    "bookmark",
+    "导航网站"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.34.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/personal-navigation.git"
+  },
+  "homepage": "https://github.com/your-username/personal-navigation#readme",
+  "bugs": {
+    "url": "https://github.com/your-username/personal-navigation/issues"
+  }
+}

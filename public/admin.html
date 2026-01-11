@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>管理后台 - iDing's Navigation</title>
+    <link rel="icon" href="/asset/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+      .busy-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:10002;backdrop-filter:blur(1px)}
+      .busy-overlay.show{display:flex;align-items:center;justify-content:center}
+      .busy-box{background:rgba(255,255,255,.95);padding:16px 20px;border-radius:12px;display:flex;gap:12px;align-items:center;box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04)}
+      .busy-spinner{width:18px;height:18px;border:2px solid #e5e7eb;border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite}
+      .busy-text{font-size:.95rem;color:#374151}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <button class="theme-toggle" title="切换主题">🌗</button>
+
+    <div class="container">
+        <header class="admin-header">
+            <div>
+                <h1>管理后台</h1>
+                <p class="subtitle">管理导航网站和分类</p>
+            </div>
+            <div class="admin-actions">
+                <a href="/" class="btn">返回首页</a>
+                <button id="sync-btn" class="btn btn-primary">同步数据</button>
+                <button id="add-category-btn" class="btn btn-primary">添加分类</button>
+            </div>
+        </header>
+
+        <div class="admin-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="admin-total-sites">-</div>
+                    <div class="stat-label">总网站数</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="admin-total-categories">-</div>
+                    <div class="stat-label">总分类数</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💾</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="data-source">-</div>
+                    <div class="stat-label">数据源</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-tabs">
+            <button class="tab-btn" data-tab="categories">分类管理</button>
+            <button class="tab-btn" data-tab="sites">网站管理</button>
+            <button class="tab-btn" data-tab="settings">设置</button>
+        </div>
+
+        <div id="tab-categories" class="tab-content">
+            <div class="section-header">
+                <h2>分类管理</h2>
+                <div>
+                  <button id="sort-categories" class="btn" style="margin-right:8px;">排序顶层分类</button>
+                  <button id="add-category" class="btn btn-primary">添加分类</button>
+                </div>
+            </div>
+            <div id="categories-container" class="admin-content">
+                <div class="loading">正在加载分类数据...</div>
+            </div>
+        </div>
+
+        <div id="tab-sites" class="tab-content">
+            <div class="section-header">
+                <h2>网站管理</h2>
+                <div>
+                    <button id="add-site" class="btn btn-primary">添加网站</button>
+                    <button id="bulk-delete" class="btn btn-danger" style="margin-left:8px;">批量删除</button>
+                    <button id="bulk-move" class="btn" style="margin-left:8px;">批量移动</button>
+                    <button id="bulk-edit" class="btn" style="margin-left:8px;">批量编辑</button>
+                    <button id="refresh-all-fav-sites" class="btn" style="margin-left:8px;">刷新全部图标</button>
+                </div>
+            </div>
+            <div class="search-filter">
+                <input type="text" id="admin-search" placeholder="搜索网站或分类...">
+                <select id="category-filter">
+                    <option value="">所有分类</option>
+                </select>
+            </div>
+            <div id="sites-container" class="admin-content">
+                <div class="loading">正在加载网站数据...</div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="section-header">
+                <h2>系统设置</h2>
+            </div>
+            <div class="admin-content">
+                <div class="setting-group">
+                    <div class="setting-group-header">
+                        <div class="setting-icon">💾</div>
+                        <div>
+                            <h3>数据管理</h3>
+                            <p class="setting-description">导出、导入或重置导航数据</p>
+                        </div>
+                    </div>
+                    <div class="setting-actions">
+                        <button id="export-data" class="btn">
+                            <span class="btn-icon">📤</span>
+                            导出数据
+                        </button>
+                        <button id="import-data" class="btn">
+                            <span class="btn-icon">📥</span>
+                            导入JSON数据
+                        </button>
+                        <button id="reset-data" class="btn btn-danger">
+                            <span class="btn-icon">🔄</span>
+                            重置为默认数据
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <div class="setting-group-header">
+                        <div class="setting-icon">📚</div>
+                        <div>
+                            <h3>导入Chrome书签</h3>
+                            <p class="setting-description">从Chrome导出的HTML文件中导入书签数据</p>
+                        </div>
+                    </div>
+                    
+                    <div class="file-upload-container">
+                        <input type="file" id="import-bookmarks-file" accept=".html,.htm" style="display: none;">
+                        <div class="file-upload-area" id="file-upload-area">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">
+                                <div class="file-upload-title">选择或拖拽HTML文件</div>
+                                <div class="file-upload-subtitle">支持Chrome、Edge、Firefox等浏览器导出的书签文件</div>
+                            </div>
+                            <button type="button" class="file-upload-btn">选择文件</button>
+                        </div>
+                        <div class="file-selected-info" id="file-selected-info" style="display: none;">
+                            <div class="file-info">
+                                <div class="file-icon">📄</div>
+                                <div class="file-details">
+                                    <div class="file-name" id="selected-file-name"></div>
+                                    <div class="file-size" id="selected-file-size"></div>
+                                </div>
+                                <button type="button" class="file-remove-btn" id="file-remove-btn">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-options">
+                        <div class="option-group">
+                            <label class="option-label">导入模式</label>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="import-mode" value="merge" id="import-mode-merge" checked>
+                                    <span class="radio-custom"></span>
+                                    <div class="radio-content">
+                                        <div class="radio-title">合并模式</div>
+                                        <div class="radio-description">将书签添加到现有数据中，保留原有内容</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="import-mode" value="replace" id="import-mode-replace">
+                                    <span class="radio-custom"></span>
+                                    <div class="radio-content">
+                                        <div class="radio-title">替换模式</div>
+                                        <div class="radio-description">完全替换现有数据（建议先备份）</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-actions">
+                        <button id="import-bookmarks-btn" class="btn btn-primary" disabled>
+                            <span class="btn-icon">📥</span>
+                            导入书签
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <div class="setting-group-header">
+                        <div class="setting-icon">🗄️</div>
+                        <div>
+                            <h3>缓存管理</h3>
+                            <p class="setting-description">管理系统缓存和网站图标</p>
+                        </div>
+                    </div>
+                    <div class="setting-actions">
+                        <button id="clear-cache" class="btn">
+                            <span class="btn-icon">🧹</span>
+                            清除缓存
+                        </button>
+                        <button id="refresh-data" class="btn">
+                            <span class="btn-icon">🔄</span>
+                            刷新数据
+                        </button>
+                        <button id="refresh-all-fav" class="btn btn-primary">
+                            <span class="btn-icon">🎨</span>
+                            刷新全部favicon(>7天)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">标题</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- 动态内容 -->
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn">取消</button>
+                <button id="modal-confirm" class="btn btn-primary">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全局忙碌遮罩：防多次点击写入 -->
+    <div id="busy-overlay" class="busy-overlay" aria-hidden="true">
+      <div class="busy-box">
+        <div class="busy-spinner" aria-label="loading"></div>
+        <div class="busy-text" id="busy-text">正在处理...</div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/admin.js"></script>
+    <script>
+        // 背景粒子动画
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('bg-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            let particles = [];
+
+            const resize = () => {
+                canvas.width = window.innerWidth * dpr;
+                canvas.height = window.innerHeight * dpr;
+                ctx.scale(dpr, dpr);
+                canvas.style.width = window.innerWidth + 'px';
+                canvas.style.height = window.innerHeight + 'px';
+            };
+
+            window.addEventListener('resize', resize);
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * window.innerWidth;
+                    this.y = Math.random() * window.innerHeight;
+                    this.vx = (Math.random() - 0.5) * 0.2;
+                    this.vy = (Math.random() - 0.5) * 0.2;
+                    this.r = Math.random() * 1 + 0.5;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > window.innerWidth) this.vx *= -1;
+                    if (this.y < 0 || this.y > window.innerHeight) this.vy *= -1;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                    ctx.fillStyle = document.body.classList.contains('dark-theme') 
+                        ? 'rgba(255,255,255,0.3)' 
+                        : 'rgba(0,0,0,0.2)';
+                    ctx.fill();
+                }
+            }
+
+            const drawLines = () => {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = document.body.classList.contains('dark-theme') 
+                                ? `rgba(255,255,255,${0.8 - dist / 80})` 
+                                : `rgba(0,0,0,${0.4 - dist / 160})`;
+                            ctx.lineWidth = 0.3;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            };
+
+            const animate = () => {
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                drawLines();
+                requestAnimationFrame(animate);
+            };
+
+            resize();
+            particles = Array.from({ 
+                length: Math.floor(window.innerWidth * window.innerHeight / 20000) 
+            }, () => new Particle());
+            animate();
+        });
+        
+        // 主题切换功能由admin.js中的ThemeManager处理
+    </script>
+</body>
+</html>

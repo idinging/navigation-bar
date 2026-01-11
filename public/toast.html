@@ -1,0 +1,164 @@
+<style id="toast-style">
+/* Toast组件现代化设计 */
+:root {
+  --toast-success: #10b981;
+  --toast-warning: #f59e0b;
+  --toast-error: #ef4444;
+  --toast-info: #06b6d4;
+  --toast-radius: 12px;
+  --toast-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.toast-container {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 10001; /* 确保在模态框之上显示 */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.toast-container.top-right {
+  left: auto;
+  right: 24px;
+}
+
+.toast-item {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  color: #374151;
+  border-radius: var(--toast-radius);
+  padding: 16px 20px;
+  box-shadow: var(--toast-shadow);
+  min-width: 320px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateX(-100%);
+  animation: slideInLeft 0.4s cubic-bezier(0, 0, 0.2, 1) forwards;
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* 左侧装饰条 */
+.toast-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--toast-info);
+  border-radius: var(--toast-radius) 0 0 var(--toast-radius);
+}
+
+/* 右上角图标 */
+.toast-item::after {
+  content: 'ℹ️';
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 1.25rem;
+  opacity: 0.8;
+}
+
+/* Success样式 */
+.toast-item.success {
+  background: rgba(236, 253, 245, 0.95);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.toast-item.success::before { background: var(--toast-success); }
+.toast-item.success::after { content: '✅'; }
+
+/* Error样式 */
+.toast-item.error {
+  background: rgba(254, 242, 242, 0.95);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.toast-item.error::before { background: var(--toast-error); }
+.toast-item.error::after { content: '❌'; }
+
+/* Warning样式 */
+.toast-item.warning,
+.toast-item.warn {
+  background: rgba(255, 251, 235, 0.95);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.toast-item.warning::before,
+.toast-item.warn::before { background: var(--toast-warning); }
+.toast-item.warning::after,
+.toast-item.warn::after { content: '⚠️'; }
+
+/* Info样式 */
+.toast-item.info {
+  background: rgba(240, 249, 255, 0.95);
+  color: #0891b2;
+  border-color: rgba(6, 182, 212, 0.2);
+}
+.toast-item.info::before { background: var(--toast-info); }
+.toast-item.info::after { content: 'ℹ️'; }
+
+/* Loading样式 */
+.toast-item.loading {
+  background: rgba(239, 246, 255, 0.95);
+  color: #2563eb;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+.toast-item.loading::before { background: #2563eb; }
+.toast-item.loading::after { 
+  content: '⏳'; 
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Toast消息文本 */
+.toast-message {
+  display: block;
+  padding-right: 32px;
+  font-weight: 500;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutLeft {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-100%); opacity: 0; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-container.top-right .toast-item {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+@media (max-width: 768px) {
+  .toast-container { left: 12px; top: 12px; }
+  .toast-container.top-right { right: 12px; left: auto; }
+  .toast-item { min-width: auto; }
+}
+</style>
+<div class="toast-item {{type}}">
+	<span class="toast-message">{{message}}</span>
+</div>

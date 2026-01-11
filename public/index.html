@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>iDing's Navigation</title>
+    <link rel="icon" href="/asset/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <button class="theme-toggle" title="切换主题">🌗</button>
+
+    <div class="container">
+        <header class="header">
+            <h1>iDing's Navigation</h1>
+            <p class="subtitle">一个简单的个人导航网站</p>
+        </header>
+
+        <div class="search-container">
+            <div class="search-wrapper">
+                <input type="text" id="search-input" placeholder="搜索网站、描述或标签..." aria-label="搜索网站">
+                <div class="search-engines">
+                    <button class="search-engine-btn active" data-engine="local" title="本站搜索">
+                        🔍
+                    </button>
+                    <button class="search-engine-btn" data-engine="google" title="Google搜索">
+                        <img src="/asset/google.ico" alt="Google">
+                    </button>
+                    <button class="search-engine-btn" data-engine="baidu" title="百度搜索">
+                        <img src="/asset/baidu.ico" alt="百度">
+                    </button>
+                    <button class="search-engine-btn" data-engine="bing" title="必应搜索">
+                        <img src="/asset/bing.ico" alt="必应">
+                    </button>
+                    <button class="search-engine-btn" data-engine="sogou" title="搜狗搜索">
+                        <img src="/asset/sougou.ico" alt="搜狗">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-item">
+                <span>📊</span>
+                <span id="total-sites">加载中...</span>
+            </div>
+            <div class="stat-item">
+                <span>📁</span>
+                <span id="total-categories">加载中...</span>
+            </div>
+            <div class="stat-item">
+                <span>🕒</span>
+                <span id="last-updated">加载中...</span>
+            </div>
+        </div>
+
+        <div id="content-container">
+            <div class="loading">正在加载导航数据...</div>
+        </div>
+
+        <footer class="footer">
+            <p>© 2025 iDing's Navigation | 个人导航网站</p>
+            <p style="margin-top:10px;">
+            </p>
+        </footer>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
+    <script>
+        // 背景粒子动画
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('bg-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            let particles = [];
+
+            const resize = () => {
+                canvas.width = window.innerWidth * dpr;
+                canvas.height = window.innerHeight * dpr;
+                ctx.scale(dpr, dpr);
+                canvas.style.width = window.innerWidth + 'px';
+                canvas.style.height = window.innerHeight + 'px';
+            };
+
+            window.addEventListener('resize', resize);
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * window.innerWidth;
+                    this.y = Math.random() * window.innerHeight;
+                    this.vx = (Math.random() - 0.5) * 0.3;
+                    this.vy = (Math.random() - 0.5) * 0.3;
+                    this.r = Math.random() * 1.2 + 0.5;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > window.innerWidth) this.vx *= -1;
+                    if (this.y < 0 || this.y > window.innerHeight) this.vy *= -1;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                    ctx.fillStyle = document.body.classList.contains('dark-theme') 
+                        ? 'rgba(255,255,255,0.4)' 
+                        : 'rgba(0,0,0,0.25)';
+                    ctx.fill();
+                }
+            }
+
+            const drawLines = () => {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = document.body.classList.contains('dark-theme') 
+                                ? `rgba(255,255,255,${1 - dist / 100})` 
+                                : `rgba(0,0,0,${0.5 - dist / 200})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            };
+
+            const animate = () => {
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                drawLines();
+                requestAnimationFrame(animate);
+            };
+
+            resize();
+            particles = Array.from({ 
+                length: Math.floor(window.innerWidth * window.innerHeight / 18000) 
+            }, () => new Particle());
+            animate();
+        });
+        
+        // 主题切换功能由app.js中的ThemeManager处理
+    </script>
+</body>
+</html>
